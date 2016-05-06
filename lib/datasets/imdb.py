@@ -106,8 +106,17 @@ class imdb(object):
             boxes = self.roidb[i]['boxes'].copy()
             oldx1 = boxes[:, 0].copy()
             oldx2 = boxes[:, 2].copy()
-            boxes[:, 0] = widths[i] - oldx2 - 1
-            boxes[:, 2] = widths[i] - oldx1 - 1
+            """
+            a bug here will cause the assertion fail. reason is that when width[i] is the same with
+            oldx2, then 1280 - 1280 - 1 -> 65535 since the boxes have type np.uint16 and underflow
+            happenes, so in the following, we clip the number to non-negative
+            """
+            boxes[:, 0] = (np.int32(widths[i]) - np.int32(oldx2) - 1).clip(min=0)
+            boxes[:, 2] = (np.int32(widths[i]) - np.int32(oldx1) - 1).clip(min=0)
+
+            #boxes[:, 0] = widths[i] - oldx2 - 1
+            #boxes[:, 2] = widths[i] - oldx1 - 1
+            
             assert (boxes[:, 2] >= boxes[:, 0]).all()
             entry = {'boxes' : boxes,
                      'gt_overlaps' : self.roidb[i]['gt_overlaps'],
